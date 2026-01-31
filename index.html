@@ -1,0 +1,954 @@
+<!doctype html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tracker Kuliah PAI UT by : M.Risky Darmana,S.Kom</title>
+  <script src="/_sdk/data_sdk.js"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    body {
+      box-sizing: border-box;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    .course-card {
+      transition: all 0.3s ease;
+    }
+
+    .course-card:hover {
+      transform: translateY(-2px);
+    }
+
+    .progress-ring {
+      transition: stroke-dashoffset 0.5s ease;
+    }
+
+    .tab-button.active {
+      position: relative;
+    }
+
+    .tab-button.active::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      right: 0;
+      height: 3px;
+      border-radius: 2px;
+      /* Style untuk Active Tab Indicator */
+      background-color: var(--primary-action-color, #7c3aed);
+    }
+
+    .checkbox-custom {
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border: 2px solid #cbd5e0;
+      border-radius: 4px;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s ease;
+    }
+
+    .checkbox-custom:checked {
+      background-color: #10b981;
+      border-color: #10b981;
+    }
+
+    .checkbox-custom:checked::after {
+      content: '✓';
+      position: absolute;
+      color: white;
+      font-size: 14px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .score-input {
+      width: 60px;
+      padding: 4px 8px;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      text-align: center;
+    }
+
+    .score-input:focus {
+      outline: none;
+      border-color: #3b82f6;
+    }
+
+    .week-item {
+      border-left: 3px solid transparent;
+      transition: all 0.2s ease;
+    }
+
+    .week-item.completed {
+      border-left-color: #10b981;
+      background-color: #f0fdf4;
+    }
+
+    .loading-spinner {
+      border: 3px solid #f3f4f6;
+      border-top: 3px solid #3b82f6;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
+  <style>
+    @view-transition {
+      navigation: auto;
+    }
+  </style>
+</head>
+
+<body class="min-h-full">
+  <div id="app" class="min-h-full" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+    <header class="text-white py-6 px-4 shadow-lg">
+      <div class="max-w-6xl mx-auto">
+        <div class="flex items-center justify-between mb-2">
+          <h1 id="app-title" class="text-3xl font-bold">📚 Tracker Kuliah PAI UT by : M.Risky Darmana,S.Kom</h1>
+          <span id="semester-badge" class="bg-white bg-opacity-20 px-4 py-2 rounded-full text-sm font-medium">Semester
+            2025.1</span>
+        </div>
+        <p class="text-white text-opacity-90">Universitas Terbuka - Program Studi Pendidikan Agama Islam </p>
+      </div>
+    </header>
+    <main class="max-w-6xl mx-auto px-4 py-6">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white rounded-lg shadow-md p-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-gray-600 text-sm">Total Progress</p>
+              <p id="total-progress" class="text-3xl font-bold text-purple-600">0%</p>
+            </div>
+            <div class="text-4xl">📊</div>
+          </div>
+        </div>
+        <div class="bg-white rounded-lg shadow-md p-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-gray-600 text-sm">Diskusi</p>
+              <p id="discussion-count" class="text-3xl font-bold text-blue-600">0/0</p>
+            </div>
+            <div class="text-4xl">💬</div>
+          </div>
+        </div>
+        <div class="bg-white rounded-lg shadow-md p-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-gray-600 text-sm">Kuis</p>
+              <p id="quiz-count" class="text-3xl font-bold text-green-600">0/0</p>
+            </div>
+            <div class="text-4xl">📝</div>
+          </div>
+        </div>
+        <div class="bg-white rounded-lg shadow-md p-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-gray-600 text-sm">Tugas</p>
+              <p id="assignment-count" class="text-3xl font-bold text-orange-600">0/0</p>
+            </div>
+            <div class="text-4xl">📋</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg shadow-md mb-6">
+        <div class="flex border-b border-gray-200">
+          <button id="tab-courses"
+            class="tab-button active flex-1 px-6 py-4 text-center font-medium text-purple-600 bg-purple-50"
+            onclick="switchTab('courses')"> Mata Kuliah </button>
+          <button id="tab-statistics"
+            class="tab-button flex-1 px-6 py-4 text-center font-medium text-gray-600 hover:bg-gray-50"
+            onclick="switchTab('statistics')"> Statistik &amp; Grafik </button>
+        </div>
+
+        <div id="content-courses" class="p-6">
+          <div class="mb-6">
+            <button onclick="toggleAddCourse()"
+              class="bg-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-purple-700 transition-colors"> ➕
+              Tambah Mata Kuliah </button>
+          </div>
+
+          <div id="add-course-form" class="hidden bg-purple-50 p-6 rounded-lg mb-6 border-2 border-purple-200">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">Tambah Mata Kuliah Baru</h3>
+            <form onsubmit="handleAddCourse(event)">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label for="course-code" class="block text-sm font-medium text-gray-700 mb-2">Kode Matkul</label>
+                  <input type="text" id="course-code" required
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="Contoh: MKDU4111">
+                </div>
+                <div>
+                  <label for="course-name" class="block text-sm font-medium text-gray-700 mb-2">Nama Mata Kuliah</label>
+                  <input type="text" id="course-name" required
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="Contoh: Pendidikan Agama Islam">
+                </div>
+              </div>
+              <div class="flex gap-3">
+                <button type="submit" id="add-course-btn"
+                  class="bg-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-purple-700 transition-colors">
+                  Simpan Mata Kuliah </button>
+                <button type="button" onclick="toggleAddCourse()"
+                  class="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg font-medium hover:bg-gray-400 transition-colors">
+                  Batal </button>
+              </div>
+            </form>
+          </div>
+
+          <div id="courses-list" class="space-y-4"></div>
+        </div>
+
+        <div id="content-statistics" class="hidden p-6">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div class="bg-white rounded-lg border border-gray-200 p-6">
+              <h3 class="text-lg font-bold text-gray-800 mb-4">Progress Per Mata Kuliah</h3>
+              <canvas id="courseProgressChart"></canvas>
+            </div>
+            <div class="bg-white rounded-lg border border-gray-200 p-6">
+              <h3 class="text-lg font-bold text-gray-800 mb-4">Penyelesaian Aktivitas</h3>
+              <canvas id="activityChart"></canvas>
+            </div>
+          </div>
+          <div class="bg-white rounded-lg border border-gray-200 p-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">Rata-rata Nilai Per Mata Kuliah</h3>
+            <canvas id="scoresChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <div id="course-modal"
+      class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-4 overflow-y-auto"
+      style="z-index: 1000;">
+      <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl my-8">
+        <div class="flex items-center justify-between p-4 border-b border-gray-200">
+          <h2 id="modal-course-title" class="text-2xl font-bold text-gray-800"></h2>
+          <div class="flex items-center gap-3">
+            <button id="save-all-btn" onclick="saveAllWeeks()"
+              class="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700">💾 Simpan Semua
+              Pertemuan</button>
+            <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700 text-2xl font-bold">×</button>
+          </div>
+        </div>
+
+        <div class="p-6">
+          <div id="weeks-list" class="space-y-3"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Menyimpan daftar mata kuliah di localStorage (jika SDK tidak menyediakannya)
+    const COURSE_STORAGE_KEY = 'pai_ut_reference_courses';
+    const DEFAULT_COURSES = [
+      { id: 'MKDI4202', code: 'MKDI4202', name: 'BELAJAR DI ERA DIGITAL' },
+      { id: 'SPAI4201', code: 'SPAI4201', name: 'NAHWU DAN SHOROF' },
+      { id: 'SPAI4202', code: 'SPAI4202', name: 'PENGANTAR STUDI ISLAM' },
+      { id: 'SPAI4203', code: 'SPAI4203', name: 'SEJARAH PERADABAN ISLAM' },
+      { id: 'SPAI4204', code: 'SPAI4204', name: 'STUDI ILMU AL-QU-RAN DAN AL-HADIST' },
+      { id: 'SPAI4205', code: 'SPAI4205', name: 'PENGEMBANGAN KURIKULUM DAN PEMBELARAN PAI' },
+      { id: 'SPIK4012', code: 'SPIK4012', name: 'MANAJEMEN BERBASIS SEKOLAH' }
+    ];
+
+    let REFERENCE_COURSES = JSON.parse(localStorage.getItem(COURSE_STORAGE_KEY)) || DEFAULT_COURSES;
+
+    // Fungsi untuk menyimpan daftar kursus ke localStorage
+    function saveReferenceCourses() {
+      localStorage.setItem(COURSE_STORAGE_KEY, JSON.stringify(REFERENCE_COURSES));
+    }
+
+
+    let currentCourseId = null;
+    let allProgressData = [];
+    let chartInstances = {};
+    let recordCount = 0;
+    const MAX_RECORDS = 999;
+    const TOTAL_WEEKS = 8; // UT umumnya 8 minggu/pertemuan
+
+    const defaultConfig = {
+      background_color: "#667eea",
+      surface_color: "#ffffff",
+      text_color: "#1f2937",
+      primary_action_color: "#7c3aed",
+      secondary_action_color: "#6b7280",
+      font_family: "system-ui",
+      font_size: 16,
+      app_title: "📚 Tracker Kuliah PAI UT",
+      semester_label: "Semester 2025.1"
+    };
+
+    async function onConfigChange(config) {
+      const appTitle = config.app_title || defaultConfig.app_title;
+      const semesterLabel = config.semester_label || defaultConfig.semester_label;
+      const backgroundColor = config.background_color || defaultConfig.background_color;
+      const surfaceColor = config.surface_color || defaultConfig.surface_color;
+      const textColor = config.text_color || defaultConfig.text_color;
+      const primaryColor = config.primary_action_color || defaultConfig.primary_action_color;
+      const secondaryColor = config.secondary_action_color || defaultConfig.secondary_action_color;
+      const fontFamily = config.font_family || defaultConfig.font_family;
+      const fontSize = config.font_size || defaultConfig.font_size;
+
+      document.getElementById('app-title').textContent = appTitle;
+      document.getElementById('semester-badge').textContent = semesterLabel;
+      const appDiv = document.getElementById('app');
+      appDiv.style.background = `linear-gradient(135deg, ${backgroundColor} 0%, ${backgroundColor}dd 100%)`;
+
+      const surfaces = document.querySelectorAll('.bg-white, .course-card, #course-modal > div');
+      surfaces.forEach(el => el.style.backgroundColor = surfaceColor);
+
+      const texts = document.querySelectorAll('p, h1, h2, h3, label, span, button');
+      texts.forEach(el => {
+        if (!el.classList.contains('text-white')) el.style.color = textColor;
+      });
+
+      // Update Tailwind classes to match custom colors
+      // Note: This requires dynamic adjustment since Tailwind classes are hardcoded
+      // We rely on CSS variables for consistent theming in custom CSS (e.g., .tab-button.active::after)
+
+      const primaryElements = document.querySelectorAll('.bg-purple-600, .text-purple-600, .border-purple-200, .focus\\:ring-purple-500');
+      primaryElements.forEach(el => {
+        // Adjust background for primary buttons
+        if (el.classList.contains('bg-purple-600')) el.style.backgroundColor = primaryColor;
+        if (el.classList.contains('hover:bg-purple-700')) el.style.setProperty('--tw-bg-opacity', '1'); // Complex, better rely on Tailwind utility function if available or CSS class replacement
+        if (el.classList.contains('text-purple-600')) el.style.color = primaryColor;
+        if (el.classList.contains('bg-purple-50')) el.style.backgroundColor = `${primaryColor}15`;
+        // For focus rings, we can't easily change the tailwind utility, this is a limitation without recompiling
+      });
+
+      // Adjust active tab indicator color via CSS variable
+      document.documentElement.style.setProperty('--primary-action-color', primaryColor);
+
+
+      const secondaryButtons = document.querySelectorAll('.bg-gray-300, .text-gray-700, .text-gray-600');
+      secondaryButtons.forEach(el => {
+        if (el.tagName === 'BUTTON' && el.classList.contains('bg-gray-300')) {
+          el.style.backgroundColor = secondaryColor;
+          el.style.color = surfaceColor; // Change text color to white/surface color for better contrast
+        } else if (el.classList.contains('text-gray-700') || el.classList.contains('text-gray-600')) {
+          el.style.color = textColor; // Default text color
+        }
+      });
+
+
+      document.body.style.fontFamily = `${fontFamily}, system-ui, -apple-system, sans-serif`;
+      document.body.style.fontSize = `${fontSize}px`;
+      document.getElementById('app-title').style.fontSize = `${fontSize * 1.875}px`;
+      document.querySelectorAll('h2').forEach(el => el.style.fontSize = `${fontSize * 1.5}px`);
+      document.querySelectorAll('h3').forEach(el => el.style.fontSize = `${fontSize * 1.125}px`);
+      document.querySelectorAll('.text-sm').forEach(el => el.style.fontSize = `${fontSize * 0.875}px`);
+    }
+
+    const dataHandler = {
+      onDataChanged(data) {
+        allProgressData = data || [];
+        recordCount = allProgressData.length;
+        updateDashboard();
+        renderCourses();
+        if (currentCourseId) renderWeeks();
+        if (!document.getElementById('content-statistics').classList.contains('hidden')) {
+          renderCharts();
+        }
+      }
+    };
+
+    async function initApp() {
+      // Load courses from local storage first (sudah di awal script)
+
+      const initResult = await window.dataSdk.init(dataHandler);
+      if (!initResult.isOk) {
+        console.error("Failed to initialize data SDK");
+      }
+
+      if (window.elementSdk) {
+        window.elementSdk.init({
+          defaultConfig,
+          onConfigChange,
+          mapToCapabilities: (config) => ({
+            recolorables: [
+              { get: () => config.background_color || defaultConfig.background_color, set: (value) => { config.background_color = value; window.elementSdk.setConfig({ background_color: value }); } },
+              { get: () => config.surface_color || defaultConfig.surface_color, set: (value) => { config.surface_color = value; window.elementSdk.setConfig({ surface_color: value }); } },
+              { get: () => config.text_color || defaultConfig.text_color, set: (value) => { config.text_color = value; window.elementSdk.setConfig({ text_color: value }); } },
+              { get: () => config.primary_action_color || defaultConfig.primary_action_color, set: (value) => { config.primary_action_color = value; window.elementSdk.setConfig({ primary_action_color: value }); } },
+              { get: () => config.secondary_action_color || defaultConfig.secondary_action_color, set: (value) => { config.secondary_action_color = value; window.elementSdk.setConfig({ secondary_action_color: value }); } }
+            ],
+            borderables: [],
+            fontEditable: { get: () => config.font_family || defaultConfig.font_family, set: (value) => { config.font_family = value; window.elementSdk.setConfig({ font_family: value }); } },
+            fontSizeable: { get: () => config.font_size || defaultConfig.font_size, set: (value) => { config.font_size = value; window.elementSdk.setConfig({ font_size: value }); } }
+          }),
+          mapToEditPanelValues: (config) => new Map([["app_title", config.app_title || defaultConfig.app_title], ["semester_label", config.semester_label || defaultConfig.semester_label]])
+        });
+      }
+
+      // Initial render jika data SDK sudah tersedia atau saat inisialisasi
+      renderCourses();
+    }
+
+    function updateDashboard() {
+      // Hanya hitung aktivitas yang terkait dengan mata kuliah yang ada di REFERENCE_COURSES
+      const allCourseIds = REFERENCE_COURSES.map(c => c.id);
+      const relevantProgress = allProgressData.filter(p => allCourseIds.includes(p.course_id));
+
+      // Total aktivitas dihitung dari total mata kuliah * TOTAL_WEEKS * 3 aktivitas per minggu
+      const totalWeeksTracked = REFERENCE_COURSES.length * TOTAL_WEEKS;
+
+      // Aktivitas yang tersimpan di SDK
+      const discussionCompleted = relevantProgress.filter(p => p.discussion_completed).length;
+      const quizCompleted = relevantProgress.filter(p => p.quiz_completed).length;
+      const assignmentCompleted = relevantProgress.filter(p => p.assignment_completed).length;
+
+      const totalPossibleActivities = relevantProgress.length * 3; // Total 3 aktivitas yang mungkin ada di data SDK
+      const totalCompleted = discussionCompleted + quizCompleted + assignmentCompleted;
+
+      const progressPercentage = totalPossibleActivities > 0 ? Math.round((totalCompleted / totalPossibleActivities) * 100) : 0;
+
+      // Menampilkan progress per aktivitas. Perhatikan ini menunjukkan total aktivitas yang pernah dicatat
+      document.getElementById('total-progress').textContent = `${progressPercentage}%`;
+      document.getElementById('discussion-count').textContent = `${discussionCompleted}/${relevantProgress.length}`;
+      document.getElementById('quiz-count').textContent = `${quizCompleted}/${relevantProgress.length}`;
+      document.getElementById('assignment-count').textContent = `${assignmentCompleted}/${relevantProgress.length}`;
+    }
+
+    function renderCourses() {
+      const coursesList = document.getElementById('courses-list');
+
+      if (REFERENCE_COURSES.length === 0) {
+        coursesList.innerHTML = '<p class="text-gray-500 text-center py-8">Belum ada mata kuliah. Tambahkan mata kuliah pertama Anda!</p>';
+        return;
+      }
+
+      coursesList.innerHTML = REFERENCE_COURSES.map(course => {
+        const courseProgress = allProgressData.filter(p => p.course_id === course.id);
+        const completedWeeks = courseProgress.filter(p => p.discussion_completed && p.quiz_completed && p.assignment_completed).length;
+        const progressPercent = Math.round((completedWeeks / TOTAL_WEEKS) * 100);
+
+        return `
+          <div class="course-card bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md cursor-pointer" onclick="openCourseDetail('${course.id}')">
+            <div class="flex items-start justify-between mb-4">
+              <div class="flex-1">
+                <h3 class="text-xl font-bold text-gray-800 mb-1">${course.name}</h3>
+                <p class="text-sm text-gray-600">${course.code}</p>
+              </div>
+              <div class="text-right">
+                <div class="text-3xl font-bold text-purple-600">${progressPercent}%</div>
+                <div class="text-xs text-gray-600">${completedWeeks}/${TOTAL_WEEKS} Pertemuan</div>
+              </div>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-3">
+              <div class="bg-purple-600 h-3 rounded-full transition-all duration-500" style="width: ${progressPercent}%"></div>
+            </div>
+            <div class="grid grid-cols-3 gap-4 mt-4 text-sm">
+              <div class="text-center">
+                <div class="font-semibold text-blue-600">${courseProgress.filter(p => p.discussion_completed).length}/${TOTAL_WEEKS}</div>
+                <div class="text-gray-600">Diskusi</div>
+              </div>
+              <div class="text-center">
+                <div class="font-semibold text-green-600">${courseProgress.filter(p => p.quiz_completed).length}/${TOTAL_WEEKS}</div>
+                <div class="text-gray-600">Kuis</div>
+              </div>
+              <div class="text-center">
+                <div class="font-semibold text-orange-600">${courseProgress.filter(p => p.assignment_completed).length}/${TOTAL_WEEKS}</div>
+                <div class="text-gray-600">Tugas</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function toggleAddCourse() {
+      const form = document.getElementById('add-course-form');
+      form.classList.toggle('hidden');
+      if (!form.classList.contains('hidden')) document.getElementById('course-code').focus();
+    }
+
+    async function handleAddCourse(event) {
+      event.preventDefault();
+      const button = document.getElementById('add-course-btn');
+      const originalText = button.textContent;
+      button.disabled = true;
+      button.innerHTML = '<div class="loading-spinner inline-block mr-2"></div> Menyimpan...';
+
+      const code = document.getElementById('course-code').value.trim().toUpperCase();
+      const name = document.getElementById('course-name').value.trim();
+      const courseId = code;
+
+      if (REFERENCE_COURSES.some(c => c.id === courseId)) {
+        Swal.fire('Gagal!', 'Mata kuliah dengan kode ini sudah ada!', 'error');
+        button.disabled = false;
+        button.textContent = originalText;
+        return;
+      }
+
+      const newCourse = { id: courseId, code, name };
+      REFERENCE_COURSES.push(newCourse);
+      saveReferenceCourses(); // Simpan ke localStorage
+
+      document.getElementById('course-code').value = '';
+      document.getElementById('course-name').value = '';
+      toggleAddCourse();
+      renderCourses();
+
+      Swal.fire('Berhasil!', `Mata kuliah ${name} (${code}) berhasil ditambahkan.`, 'success');
+
+      button.disabled = false;
+      button.textContent = originalText;
+    }
+
+    function openCourseDetail(courseId) {
+      currentCourseId = courseId;
+      const course = REFERENCE_COURSES.find(c => c.id === courseId);
+      if (!course) return;
+
+      document.getElementById('modal-course-title').textContent = `${course.code} - ${course.name}`;
+      renderWeeks();
+      document.getElementById('course-modal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('course-modal').classList.add('hidden');
+      currentCourseId = null;
+    }
+
+    function renderWeeks() {
+      const weeksList = document.getElementById('weeks-list');
+      const courseProgress = allProgressData.filter(p => p.course_id === currentCourseId);
+
+      weeksList.innerHTML = Array.from({ length: TOTAL_WEEKS }, (_, i) => {
+        const week = i + 1;
+        const progress = courseProgress.find(p => p.week === week) || null;
+        const isCompleted = progress && progress.discussion_completed && progress.quiz_completed && progress.assignment_completed;
+
+        const discChecked = progress?.discussion_completed ? 'checked' : '';
+        const quizChecked = progress?.quiz_completed ? 'checked' : '';
+        const asgChecked = progress?.assignment_completed ? 'checked' : '';
+
+        // Menggunakan value yang sudah ada dari progress atau 0/kosong untuk input
+        const discScore = progress?.discussion_score ? progress.discussion_score : '';
+        const quizScore = progress?.quiz_score ? progress.quiz_score : '';
+        const asgScore = progress?.assignment_score ? progress.assignment_score : '';
+
+        const notesText = progress?.notes ? progress.notes : '';
+        const isNotesFormVisible = notesText || (progress === null && i === 0); // Tampilkan form jika ada catatan atau ini pertemuan 1 dan belum ada data
+
+        return `
+          <div id="week-${week}" class="week-item ${isCompleted ? 'completed' : ''} bg-white border border-gray-200 rounded-lg p-4">
+            <div class="flex items-center justify-between mb-3">
+              <h4 class="font-bold text-gray-800">Pertemuan ${week}</h4>
+              ${isCompleted ? '<span class="text-green-600 text-sm font-medium">✓ Selesai</span>' : ''}
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="flex items-center justify-between">
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input id="chk-${currentCourseId}-${week}-discussion" type="checkbox" class="checkbox-custom" ${discChecked}>
+                  <span class="text-sm">💬 Diskusi</span>
+                </label>
+                <input id="score-${currentCourseId}-${week}-discussion" type="number" class="score-input" min="0" max="100" value="${discScore}" placeholder="Nilai">
+              </div>
+
+              <div class="flex items-center justify-between">
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input id="chk-${currentCourseId}-${week}-quiz" type="checkbox" class="checkbox-custom" ${quizChecked}>
+                  <span class="text-sm">📝 Kuis</span>
+                </label>
+                <input id="score-${currentCourseId}-${week}-quiz" type="number" class="score-input" min="0" max="100" value="${quizScore}" placeholder="Nilai">
+              </div>
+
+              <div class="flex items-center justify-between">
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input id="chk-${currentCourseId}-${week}-assignment" type="checkbox" class="checkbox-custom" ${asgChecked}>
+                  <span class="text-sm">📋 Tugas</span>
+                </label>
+                <input id="score-${currentCourseId}-${week}-assignment" type="number" class="score-input" min="0" max="100" value="${asgScore}" placeholder="Nilai">
+              </div>
+            </div>
+
+            <div class="mt-3">
+              <button type="button" onclick="toggleNotes('${currentCourseId}', ${week})" class="text-sm text-purple-600 hover:text-purple-700 font-medium">
+                ${notesText ? '✏️ Edit Catatan' : '➕ Tambah Catatan'}
+              </button>
+            </div>
+
+            <div id="notes-form-${week}" class="${notesText ? '' : 'hidden'} mt-3 pt-3 border-t border-gray-200">
+              <textarea id="notes-input-${week}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" rows="2" placeholder="Tulis catatan untuk pertemuan ini...">${notesText}</textarea>
+              <div class="flex gap-2 mt-2">
+                <button onclick="saveNotes('${currentCourseId}', ${week})" class="bg-purple-600 text-white px-4 py-1 rounded text-sm hover:bg-purple-700">Simpan Catatan</button>
+                <button onclick="toggleNotes('${currentCourseId}', ${week})" class="bg-gray-300 text-gray-700 px-4 py-1 rounded text-sm hover:bg-gray-400">Batal</button>
+              </div>
+            </div>
+
+            <div class="mt-3 flex gap-2">
+              <button onclick="saveWeekSingle('${currentCourseId}', ${week})" class="bg-green-600 text-white px-4 py-1 rounded text-sm hover:bg-green-700">💾 Simpan Pertemuan</button>
+              <button onclick="clearWeek('${currentCourseId}', ${week})" class="bg-red-100 text-red-700 px-4 py-1 rounded text-sm hover:bg-red-200">🗑️ Hapus</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Upsert lokal
+    function upsertLocalProgress(progress) {
+      const idx = allProgressData.findIndex(p => p.id === progress.id);
+      if (idx >= 0) {
+        allProgressData[idx] = progress;
+      } else {
+        allProgressData.push(progress);
+      }
+      recordCount = allProgressData.length;
+      updateDashboard();
+      renderCourses();
+      if (currentCourseId) renderWeeks();
+    }
+
+    // Fungsi tunggal yang dipanggil saat klik Simpan Pertemuan
+    async function saveWeekSingle(courseId, week) {
+      const btn = document.querySelector(`#week-${week} .bg-green-600`);
+      const originalText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<div class="loading-spinner inline-block mr-2"></div> Menyimpan...';
+
+      await saveWeek(courseId, week); // Memanggil logika penyimpanan utama
+
+      btn.disabled = false;
+      btn.innerHTML = originalText;
+      Swal.fire({
+        toast: true,
+        position: 'bottom-end',
+        icon: 'success',
+        title: `Pertemuan ${week} tersimpan!`,
+        showConfirmButton: false,
+        timer: 1500
+      });
+    }
+
+    // Logika penyimpanan utama (digunakan oleh saveWeekSingle dan saveAllWeeks)
+    async function saveWeek(courseId, week) {
+      const discChk = document.getElementById(`chk-${courseId}-${week}-discussion`);
+      const quizChk = document.getElementById(`chk-${courseId}-${week}-quiz`);
+      const asgChk = document.getElementById(`chk-${courseId}-${week}-assignment`);
+      const discScoreEl = document.getElementById(`score-${courseId}-${week}-discussion`);
+      const quizScoreEl = document.getElementById(`score-${courseId}-${week}-quiz`);
+      const asgScoreEl = document.getElementById(`score-${courseId}-${week}-assignment`);
+      const notesEl = document.getElementById(`notes-input-${week}`);
+
+      const discussion_completed = !!(discChk && discChk.checked);
+      const quiz_completed = !!(quizChk && quizChk.checked);
+      const assignment_completed = !!(asgChk && asgChk.checked);
+      // Menggunakan parseFloat untuk memastikan tipe data numerik
+      const discussion_score = discScoreEl ? (parseFloat(discScoreEl.value) || 0) : 0;
+      const quiz_score = quizScoreEl ? (parseFloat(quizScoreEl.value) || 0) : 0;
+      const assignment_score = asgScoreEl ? (parseFloat(asgScoreEl.value) || 0) : 0;
+      const notes = notesEl ? notesEl.value.trim() : '';
+
+      let existing = allProgressData.find(p => p.course_id === courseId && p.week === week);
+      let res;
+      let newOrUpdated;
+
+      if (existing) {
+        newOrUpdated = {
+          ...existing,
+          discussion_completed, quiz_completed, assignment_completed,
+          discussion_score, quiz_score, assignment_score,
+          notes,
+          updated_at: new Date().toISOString()
+        };
+        res = await window.dataSdk.update(newOrUpdated);
+      } else {
+        if (recordCount >= MAX_RECORDS) {
+          console.warn('Batas maksimal 999 data tercapai.');
+          return { isOk: false, error: 'Max records reached' };
+        }
+        newOrUpdated = {
+          id: `${courseId}-${week}`,
+          course_id: courseId,
+          week,
+          discussion_completed,
+          quiz_completed,
+          assignment_completed,
+          discussion_score,
+          quiz_score,
+          assignment_score,
+          notes,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        res = await window.dataSdk.create(newOrUpdated);
+      }
+
+      if (res.isOk) {
+        upsertLocalProgress(newOrUpdated);
+      } else {
+        console.error('Gagal menyimpan pertemuan:', res);
+        if (res.error !== 'Max records reached') {
+          Swal.fire('Gagal!', 'Gagal menyimpan perubahan. Cek koneksi atau coba lagi.', 'error');
+        }
+      }
+      return res;
+    }
+
+    // Hapus pertemuan
+    async function clearWeek(courseId, week) {
+      const existing = allProgressData.find(p => p.course_id === courseId && p.week === week);
+      if (!existing) {
+        Swal.fire('Info', 'Belum ada data untuk pertemuan ini.', 'info');
+        return;
+      }
+
+      const confirm = await Swal.fire({
+        title: 'Hapus Data?',
+        text: `Anda yakin ingin menghapus data Pertemuan ${week}?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Ya, Hapus!',
+        cancelButtonText: 'Batal'
+      });
+
+      if (confirm.isConfirmed) {
+        if (window.dataSdk && typeof window.dataSdk.delete === 'function') {
+          const res = await window.dataSdk.delete(existing);
+          if (res.isOk) {
+            allProgressData = allProgressData.filter(p => !(p.course_id === courseId && p.week === week));
+            recordCount = allProgressData.length;
+            updateDashboard();
+            renderWeeks();
+            renderCourses();
+            Swal.fire('Berhasil!', 'Data berhasil dihapus.', 'success');
+          } else {
+            console.error('Gagal menghapus:', res);
+            Swal.fire('Gagal!', 'Gagal menghapus data. Cek koneksi atau coba lagi.', 'error');
+          }
+        } else {
+          // Fallback for missing delete function
+          allProgressData = allProgressData.filter(p => !(p.course_id === courseId && p.week === week));
+          recordCount = allProgressData.length;
+          updateDashboard();
+          renderWeeks();
+          renderCourses();
+          Swal.fire('Berhasil!', 'Data berhasil dihapus (lokal).', 'success');
+        }
+      }
+    }
+
+    // Toggle notes form
+    function toggleNotes(courseId, week) {
+      const form = document.getElementById(`notes-form-${week}`);
+      if (!form) return;
+      form.classList.toggle('hidden');
+      if (!form.classList.contains('hidden')) document.getElementById(`notes-input-${week}`).focus();
+    }
+
+    async function saveNotes(courseId, week) {
+      await saveWeek(courseId, week);
+      const form = document.getElementById(`notes-form-${week}`);
+      if (form && !form.classList.contains('hidden')) form.classList.add('hidden');
+      Swal.fire({
+        toast: true,
+        position: 'bottom-end',
+        icon: 'success',
+        title: `Catatan Pertemuan ${week} tersimpan!`,
+        showConfirmButton: false,
+        timer: 1500
+      });
+    }
+
+    // ---------- Simpan semua pertemuan untuk currentCourseId ----------
+    async function saveAllWeeks() {
+      if (!currentCourseId) return Swal.fire('Error', 'Tidak ada mata kuliah terbuka untuk disimpan.', 'error');
+
+      const btn = document.getElementById('save-all-btn');
+      btn.disabled = true;
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<div class="loading-spinner inline-block mr-2"></div> Menyimpan...';
+
+      const results = [];
+      for (let week = 1; week <= TOTAL_WEEKS; week++) {
+        // Panggil logika penyimpanan utama
+        const res = await saveWeek(currentCourseId, week);
+        results.push({ week, ok: res.isOk, reason: res.error });
+      }
+
+      // ringkasan hasil
+      const failed = results.filter(r => !r.ok);
+      if (failed.length === 0) {
+        Swal.fire('Berhasil!', 'Semua pertemuan berhasil disimpan ✅', 'success');
+      } else {
+        const errorText = failed.map(f => `Pertemuan ${f.week}: ${f.reason || 'Gagal'}`).join('\n');
+        Swal.fire('Perhatian!', `Selesai: ${results.length - failed.length} tersimpan, ${failed.length} gagal.`, 'warning');
+        console.warn('SaveAll failed items:', failed);
+      }
+
+      btn.disabled = false;
+      btn.innerHTML = originalText;
+      // refresh UI secara penuh
+      updateDashboard();
+      renderCourses();
+      renderWeeks();
+    }
+    // ---------------------------------------------------------------------
+
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('active', 'text-purple-600', 'bg-purple-50');
+        btn.classList.add('text-gray-600');
+        // Reset warna agar tidak terpengaruh style.color dari onConfigChange
+        btn.style.color = '';
+        btn.style.backgroundColor = '';
+      });
+
+      document.getElementById(`tab-${tabName}`).classList.add('active', 'text-purple-600', 'bg-purple-50');
+      document.getElementById(`tab-${tabName}`).style.color = document.documentElement.style.getPropertyValue('--primary-action-color') || '#7c3aed';
+      document.getElementById(`tab-${tabName}`).style.backgroundColor = (document.documentElement.style.getPropertyValue('--primary-action-color') || '#7c3aed') + '15';
+
+
+      document.querySelectorAll('[id^="content-"]').forEach(content => {
+        content.classList.add('hidden');
+      });
+      document.getElementById(`content-${tabName}`).classList.remove('hidden');
+
+      if (tabName === 'statistics') renderCharts();
+    }
+
+    function renderCharts() {
+      // Pastikan Chart.js diinisialisasi ulang
+      if (chartInstances.courseProgress) chartInstances.courseProgress.destroy();
+      if (chartInstances.activity) chartInstances.activity.destroy();
+      if (chartInstances.scores) chartInstances.scores.destroy();
+
+      renderCourseProgressChart();
+      renderActivityChart();
+      renderScoresChart();
+    }
+
+    // Fungsi Chart lainnya sama, tinggal memastikan menggunakan TOTAL_WEEKS
+    function renderCourseProgressChart() {
+      const ctx = document.getElementById('courseProgressChart');
+      if (!ctx) return;
+      if (chartInstances.courseProgress) chartInstances.courseProgress.destroy();
+
+      const courseData = REFERENCE_COURSES.map(course => {
+        const courseProgress = allProgressData.filter(p => p.course_id === course.id);
+        const completedWeeks = courseProgress.filter(p => p.discussion_completed && p.quiz_completed && p.assignment_completed).length;
+        return { name: course.code, progress: Math.round((completedWeeks / TOTAL_WEEKS) * 100) };
+      });
+
+      chartInstances.courseProgress = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: courseData.map(d => d.name),
+          datasets: [{ label: 'Progress (%)', data: courseData.map(d => d.progress), backgroundColor: '#7c3aed', borderColor: '#6d28d9', borderWidth: 1 }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          scales: { y: { beginAtZero: true, max: 100, ticks: { callback: function (value) { return value + '%'; } } } },
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+
+    function renderActivityChart() {
+      const ctx = document.getElementById('activityChart');
+      if (!ctx) return;
+      if (chartInstances.activity) chartInstances.activity.destroy();
+
+      const totalActivities = REFERENCE_COURSES.length * TOTAL_WEEKS;
+      const relevantProgress = allProgressData.filter(p => REFERENCE_COURSES.map(c => c.id).includes(p.course_id));
+
+      const discussionCompleted = relevantProgress.filter(p => p.discussion_completed).length;
+      const quizCompleted = relevantProgress.filter(p => p.quiz_completed).length;
+      const assignmentCompleted = relevantProgress.filter(p => p.assignment_completed).length;
+
+      const totalRecordedWeeks = relevantProgress.length;
+
+      // Asumsi: Kita hanya menghitung 3 aktivitas per record yang ada di SDK
+      const totalPossibleCompleted = totalRecordedWeeks * 3;
+      const totalCompleted = discussionCompleted + quizCompleted + assignmentCompleted;
+      const totalUncompleted = totalPossibleCompleted - totalCompleted;
+
+      chartInstances.activity = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Diskusi Selesai', 'Kuis Selesai', 'Tugas Selesai', 'Belum Selesai (Dicatat)'],
+          datasets: [{
+            data: [
+              discussionCompleted,
+              quizCompleted,
+              assignmentCompleted,
+              totalUncompleted > 0 ? totalUncompleted : 0
+            ],
+            backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#e5e7eb'],
+            borderWidth: 2,
+            borderColor: '#ffffff'
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom' } } }
+      });
+    }
+
+    function renderScoresChart() {
+      const ctx = document.getElementById('scoresChart');
+      if (!ctx) return;
+      if (chartInstances.scores) chartInstances.scores.destroy();
+
+      const courseScores = REFERENCE_COURSES.map(course => {
+        const courseProgress = allProgressData.filter(p => p.course_id === course.id);
+
+        // Menggunakan parseFloat saat mengambil skor
+        const discussionScores = courseProgress.filter(p => parseFloat(p.discussion_score) > 0).map(p => parseFloat(p.discussion_score));
+        const quizScores = courseProgress.filter(p => parseFloat(p.quiz_score) > 0).map(p => parseFloat(p.quiz_score));
+        const assignmentScores = courseProgress.filter(p => parseFloat(p.assignment_score) > 0).map(p => parseFloat(p.assignment_score));
+
+        const avgDiscussion = discussionScores.length > 0 ? discussionScores.reduce((a, b) => a + b, 0) / discussionScores.length : 0;
+        const avgQuiz = quizScores.length > 0 ? quizScores.reduce((a, b) => a + b, 0) / quizScores.length : 0;
+        const avgAssignment = assignmentScores.length > 0 ? assignmentScores.reduce((a, b) => a + b, 0) / assignmentScores.length : 0;
+
+        return { name: course.code, discussion: Math.round(avgDiscussion), quiz: Math.round(avgQuiz), assignment: Math.round(avgAssignment) };
+      });
+
+      chartInstances.scores = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: courseScores.map(d => d.name),
+          datasets: [
+            { label: 'Diskusi', data: courseScores.map(d => d.discussion), borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', tension: 0.4 },
+            { label: 'Kuis', data: courseScores.map(d => d.quiz), borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', tension: 0.4 },
+            { label: 'Tugas', data: courseScores.map(d => d.assignment), borderColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.1)', tension: 0.4 }
+          ]
+        },
+        options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: true, max: 100 } }, plugins: { legend: { position: 'bottom' } } }
+      });
+    }
+
+
+    document.addEventListener('DOMContentLoaded', initApp);
+  </script>
+</body>
+
+</html>
